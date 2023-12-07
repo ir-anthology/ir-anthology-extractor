@@ -27,7 +27,7 @@ class PDFextractor:
         self.start = ((str(now.year)) + "-" + (str(now.month).rjust(2,"0")) + "-" + (str(now.day).rjust(2,"0")) + "_" +
                       (str(now.hour).rjust(2,"0")) + "-" + (str(now.minute).rjust(2,"0")))
         
-        self.log_file = self.log_directory + sep + self.start + ".txt"
+        self.log_file = self.log_directory + sep + self.start + "_log.csv"
         self.new_found_file = self.log_directory + sep + self.start + "_new_found.csv"
         self.not_found_file = self.log_directory + sep + self.start + "_not_found.csv"
 
