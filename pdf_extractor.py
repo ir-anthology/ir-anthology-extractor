@@ -28,6 +28,8 @@ class PDFextractor:
                       (str(now.hour).rjust(2,"0")) + "-" + (str(now.minute).rjust(2,"0")))
         
         self.log_file = self.log_directory + sep + self.start + ".txt"
+        self.new_found_file = self.log_directory + sep + self.start + "_new_found.csv"
+        self.not_found_file = self.log_directory + sep + self.start + "_not_found.csv"
 
     def bibliography(self, entry):
         entry_in_unicode = bibtexparser.customization.convert_to_unicode(entry)
@@ -142,6 +144,12 @@ class PDFextractor:
                                         csv_writer.writerow([bibkey, title, title_as_filename, authors, doi, proceeding_pdf_filepath, page_number, page_number+page_count])
                                 elif check == "i":
                                     break
+
+        for bibkey, title, title_as_filename, authors, last_names_of_authors, doi, page_count in entries:
+            if bibkey not in entries_found_by_doi and bibkey not in entries_found_by_title:
+                with open(self.not_found_file, "a") as not_found_file:
+                    csv_writer = writer(not_found_file, delimiter=",")
+                    csv_writer.writerow([bibkey, title, authors, doi])
                                 
         for entries_found, output_directory in [[entries_found_by_doi,
                                                  self.output_directory  + "-by-doi" + ("-test" if test else "")],
@@ -152,13 +160,16 @@ class PDFextractor:
                 with fitz.open(proceeding_pdf_filepath) as pdf:
                     paper = fitz.open()
                     paper.insert_pdf(pdf, from_page=from_page, to_page=to_page)
-                    filepath = (output_directory + sep + 
-                                venue + sep + year + sep + 
-                                doi_or_title_as_pathname + ".pdf")
-                    if not exists(dirname(filepath)):
-                        makedirs(dirname(filepath))
-                    if not exists(filepath):
-                        paper.save(filepath)
+                    paper_filepath = (output_directory + sep +
+                                      venue + sep + year + sep +
+                                      doi_or_title_as_pathname + ".pdf")
+                    if not exists(dirname(paper_filepath)):
+                        makedirs(dirname(paper_filepath))
+                    if not exists(paper_filepath):
+                        paper.save(paper_filepath)
+                        with open(self.new_found_file, "a") as new_found_file:
+                            csv_writer = writer(new_found_file, delimiter=",")
+                            csv_writer.writerow([bibkey])
 
         return len(entries_found_by_doi), len(entries_found_by_title)
 
@@ -208,7 +219,7 @@ class PDFextractor:
 if __name__ == "__main__":
 
     proceedings_directory = "sources/proceedings-by-venue"
-    bibliography_directory = "/media/wolfgang/Ceph/data-in-production/ir-anthology/conf/"
+    bibliography_directory = "/media/Ceph/data-in-production/ir-anthology/conf/"
     output_directory = "output/papers-by-venue-extracted"
 
     proceedings = {}
